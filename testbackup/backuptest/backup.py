@@ -3,6 +3,10 @@ import logging
 import os
 import time
 import glob
+import smtplib
+from dotenv import load_dotenv
+
+load_dotenv()
 
 now = time.time()
 logging.basicConfig(
@@ -12,10 +16,15 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-def create_backup(sitename):
+def create_backup(sitename,source_dir):
     try:
-        result = subprocess.run(['bench', '--site', sitename, 'backup'], check=True)
-        logging.info(f'Successfully created backup for {sitename}')
+        files = list(glob.iglob(os.path.join(source_dir, "*.gz")))
+        print(len(files))
+        if len(files) > 2:
+            print("more then 3files")
+        else:
+            result = subprocess.run(['bench', '--site', sitename, 'backup'], check=True)
+            logging.info(f'Successfully created backup for {sitename}')
     except subprocess.CalledProcessError as e:
         logging.error(f'Error creating backup for {sitename}: {e}')
 
@@ -42,7 +51,7 @@ def main():
     source_dir = '/home/cas/frappe-bench/sites/cas.com.np/private/backups'
     files = list(glob.iglob(os.path.join(source_dir, "*.gz")))
     remote_path = 'erpBackup:/home/cas/Downloads'
-    create_backup('cas.com.np')
+    create_backup('cas.com.np',source_dir)
     check_older_files(path)
     copy_backup(files, remote_path)
 
