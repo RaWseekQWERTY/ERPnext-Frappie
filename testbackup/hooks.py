@@ -132,6 +132,13 @@ app_license = "mit"
 
 # Scheduled Tasks
 # ---------------
+# scheduler_events = {
+#     "cron": {
+#         "* * * * *": [
+#             "testbackup.backuptest.backup.main"
+#         ]
+#     }
+# }
 
 # scheduler_events = {
 # 	"all": [
