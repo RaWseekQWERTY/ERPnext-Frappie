@@ -3,10 +3,10 @@ import logging
 import os
 import time
 import glob
-import smtplib
-from dotenv import load_dotenv
+# import smtplib
+# from dotenv import load_dotenv
 
-load_dotenv()
+# load_dotenv()
 
 now = time.time()
 logging.basicConfig(
@@ -16,15 +16,11 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-def create_backup(sitename,source_dir):
+def create_backup(sitename):
     try:
-        files = list(glob.iglob(os.path.join(source_dir, "*.gz")))
-        print(len(files))
-        if len(files) > 2:
-            print("more then 3files")
-        else:
-            result = subprocess.run(['bench', '--site', sitename, 'backup'], check=True)
-            logging.info(f'Successfully created backup for {sitename}')
+        
+        result = subprocess.run(['bench', '--site', sitename, 'backup'], check=True)
+        logging.info(f'Successfully created backup for {sitename}')
     except subprocess.CalledProcessError as e:
         logging.error(f'Error creating backup for {sitename}: {e}')
 
