@@ -136,8 +136,8 @@ app_license = "mit"
 #     "cron": {
 #         "* * * * *": [
 #             "testbackup.backuptest.backup.main"
-#         ]
-#     }
+#         ],
+#     },
 # }
 
 # scheduler_events = {

@@ -3,35 +3,37 @@ import logging
 import os
 import time
 import glob
-# import smtplib
-# from dotenv import load_dotenv
+from datetime import datetime
+import frappe
+from frappe.core.doctype.communication.email import make
 
-# load_dotenv()
+
+logging.basicConfig(filename='backup_logging.log', level=logging.INFO, 
+                    format='%(asctime)s:%(levelname)s:%(message)s')
 
 now = time.time()
-logging.basicConfig(
-    format="{asctime} - {levelname} - {message}",
-    style="{",
-    datefmt="%Y-%m-%d %H:%M",
-    level=logging.INFO
-)
 
 def create_backup(sitename):
     try:
-        
-        result = subprocess.run(['bench', '--site', sitename, 'backup'], check=True)
+        subprocess.run(['bench', '--site', sitename, 'backup',"--with-files"], check=True)
         logging.info(f'Successfully created backup for {sitename}')
     except subprocess.CalledProcessError as e:
         logging.error(f'Error creating backup for {sitename}: {e}')
+        send_failure_email(sitename, f'Error creating backup: {e}')
 
 def check_older_files(path):
+    today = datetime.today().strftime('%Y%m%d')
     for filename in os.listdir(path):
         file_path = os.path.join(path, filename)
-        # if file is 1 day old then remove
-        if os.path.getmtime(file_path) < now - 1 * 86400:
+        file_date = datetime.fromtimestamp(os.path.getmtime(file_path)).strftime('%Y%m%d')
+        # Delete if the file is not created today
+        if file_date != today:
             if os.path.isfile(file_path):
-                os.remove(file_path)
-                logging.info(f'Removed file: {filename}')
+                try:
+                    os.remove(file_path)
+                    logging.info(f'Removed old backup file: {filename}')
+                except OSError as e:
+                    logging.error(f'Error deleting file {file_path}: {e}')
 
 def copy_backup(files, remote_path):
     logging.info("Copying backup")
@@ -41,14 +43,40 @@ def copy_backup(files, remote_path):
             logging.info(f'Successfully copied backup file {file} to {remote_path}')
     except subprocess.CalledProcessError as e:
         logging.error(f'Error copying backup for {file}: {e}')
+        send_failure_email(None, f'Error copying backup: {e}')
+
+def send_failure_email(site_name, error_message):
+    recipient = "admin@example.com"
+    subject = f"Backup Failure for Site {site_name}" if site_name else "Backup Copy Failure"
+    message = f"The backup process has failed.\n\nError Message:\n{error_message}"
+    
+    try:
+        make(subject=subject, content=message, recipients=recipient).send()
+        logging.info(f'Failure notification email sent for {site_name}')
+    except Exception as e:
+        logging.error(f'Error sending failure email: {e}')
 
 def main():
-    path = r'/home/cas/frappe-bench/sites/cas.com.np/private/backups'
-    source_dir = '/home/cas/frappe-bench/sites/cas.com.np/private/backups'
-    files = list(glob.iglob(os.path.join(source_dir, "*.gz")))
+    sitename = 'cas.com.np'
+    path = f'/home/cas/frappe-bench/sites/{sitename}/private/backups'
     remote_path = 'erpBackup:/home/cas/Downloads'
-    create_backup('cas.com.np',source_dir)
+    
+    # Perform the backup
+    create_backup(sitename)
+    
+    # Check and delete older files
     check_older_files(path)
+    
+    # Get today's backup files and copy them to the remote location
+    patterns = ['*.sql.gz*','*.tar*']
+    files = []
+    
+    for pattern in patterns:
+        files.extend(glob.iglob(os.path.join(path, pattern)))
+    
+    files = list(glob.iglob(os.path.join(path, pattern)))
+    print(files)
+
     copy_backup(files, remote_path)
 
 if __name__ == "__main__":
