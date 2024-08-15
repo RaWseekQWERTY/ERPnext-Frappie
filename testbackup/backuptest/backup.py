@@ -4,7 +4,6 @@ import os
 import time
 import glob
 from datetime import datetime
-import frappe
 from frappe.core.doctype.communication.email import make
 
 
@@ -68,7 +67,7 @@ def main():
     check_older_files(path)
     
     # Get today's backup files and copy them to the remote location
-    patterns = ['*.sql.gz*','*.tar*']
+    patterns = ['*.sql.gz*','*.tar*','*.json']
     files = []
     
     for pattern in patterns:
