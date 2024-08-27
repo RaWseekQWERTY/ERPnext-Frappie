@@ -72,11 +72,12 @@ def main():
     
     for pattern in patterns:
         files.extend(glob.iglob(os.path.join(path, pattern)))
-        print(files)
+        
     # files = list(glob.iglob(os.path.join(path, pattern)))
-    
+    print(files)
 
     copy_backup(files, remote_path)
 
 if __name__ == "__main__":
     main()
+
